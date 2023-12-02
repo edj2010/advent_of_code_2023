@@ -1,0 +1,9 @@
+[package]
+name = "advent_of_code_base"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+advent_of_code = { path = "C:\\Users\\evand\\Documents\\Rust\\advent_of_code\\advent_of_code" }
