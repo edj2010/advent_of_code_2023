@@ -1,22 +1,101 @@
-use advent_of_code::parse::{parsers, Parser};
+use advent_of_code::{
+    grid::{Grid, GridPoint, ADJACENT, EAST, SOUTH},
+    parse::{parsers, Parser},
+};
 
-fn parse(input: &str) -> String {
-    parsers::any()
+use std::collections::{HashMap, HashSet};
+
+fn parse(input: &str) -> Vec<Vec<char>> {
+    parsers::many_chars(|c| c != '\n')
+        .map(|s| s.bytes().map(|b| b as char).collect::<Vec<char>>())
+        .many_lines("\n")
         .parse(input)
         .finish()
         .expect("Failed to parse input")
+        .collect()
 }
 
 #[allow(dead_code)]
 pub fn part1(input: &str) -> u32 {
-    parse(input);
-    0
+    let diagram: Grid<char> = Grid::of_vec_of_vecs(parse(input)).unwrap();
+    let rows = diagram.rows();
+    let cols = diagram.cols();
+    let mut sum = 0;
+    for row_start in GridPoint::new(0_usize, 0).traverse_by(SOUTH, 0, rows, 0, cols) {
+        let mut current_number = 0;
+        let mut important_number = false;
+        for char_idx in row_start.traverse_by(EAST, 0, rows, 0, cols) {
+            let digit = diagram.get(char_idx).unwrap();
+            if digit.is_numeric() {
+                current_number = 10 * current_number + digit.to_digit(10).unwrap();
+                for adjacent_offset in ADJACENT {
+                    if let Some(offset_idx) =
+                        char_idx.add_checked(adjacent_offset, &0, &rows, &0, &cols)
+                    {
+                        let adjacent_digit = diagram.get(offset_idx).unwrap();
+                        important_number |= *adjacent_digit != '.' && !adjacent_digit.is_digit(10);
+                    }
+                }
+            } else {
+                if important_number {
+                    sum += current_number;
+                }
+                current_number = 0;
+                important_number = false;
+            }
+        }
+        if important_number {
+            sum += current_number;
+        }
+    }
+    sum
 }
 
 #[allow(dead_code)]
 pub fn part2(input: &str) -> u32 {
-    parse(input);
-    0
+    let diagram: Grid<char> = Grid::of_vec_of_vecs(parse(input)).unwrap();
+    let mut gears: HashMap<GridPoint<usize>, Vec<u32>> = HashMap::new();
+    let rows = diagram.rows();
+    let cols = diagram.cols();
+    for row_start in GridPoint::new(0_usize, 0).traverse_by(SOUTH, 0, rows, 0, cols) {
+        let mut current_number = 0;
+        let mut adjacent_gears: HashSet<GridPoint<usize>> = HashSet::new();
+        for char_idx in row_start.traverse_by(EAST, 0, rows, 0, cols) {
+            let digit = diagram.get(char_idx).unwrap();
+            if digit.is_numeric() {
+                current_number = 10 * current_number + digit.to_digit(10).unwrap();
+                for adjacent_offset in ADJACENT {
+                    if let Some(offset_idx) =
+                        char_idx.add_checked(adjacent_offset, &0, &rows, &0, &cols)
+                    {
+                        if *diagram.get(offset_idx).unwrap() == '*' {
+                            adjacent_gears.insert(offset_idx);
+                        }
+                    }
+                }
+            } else {
+                for gear in adjacent_gears {
+                    gears.entry(gear).or_default().push(current_number);
+                }
+                adjacent_gears = HashSet::new();
+                current_number = 0;
+            }
+        }
+        for gear in adjacent_gears {
+            gears.entry(gear).or_default().push(current_number);
+        }
+    }
+    gears
+        .values()
+        .into_iter()
+        .map(|part_numbers| {
+            if part_numbers.len() == 2 {
+                part_numbers[0] * part_numbers[1]
+            } else {
+                0
+            }
+        })
+        .sum()
 }
 
 #[allow(dead_code)]
@@ -27,17 +106,27 @@ mod tests {
     use advent_of_code::{day::Day, web_api::load_question_input};
     use test::Bencher;
 
-    const EXAMPLE: &str = "";
-    const DAY: Day = Day::Day01;
+    const EXAMPLE: &str = "...467..114..
+......*......
+.....35..633.
+.........#...
+...617*......
+........+.58.
+.....592.....
+.........755.
+......$.*....
+....664.598..
+";
+    const DAY: Day = Day::Day03;
 
     #[test]
     fn part1_example() {
-        assert_eq!(part1(EXAMPLE), 0);
+        assert_eq!(part1(EXAMPLE), 4361);
     }
 
     #[test]
     fn part2_example() {
-        assert_eq!(part2(EXAMPLE), 0);
+        assert_eq!(part2(EXAMPLE), 467835);
     }
 
     #[test]
@@ -49,7 +138,7 @@ mod tests {
                 crate::INPUT_CACHE,
                 DAY
             )),
-            0
+            520019
         );
     }
 
@@ -62,7 +151,7 @@ mod tests {
                 crate::INPUT_CACHE,
                 DAY
             )),
-            0
+            75519888
         );
     }
 
