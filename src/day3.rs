@@ -18,20 +18,17 @@ fn parse(input: &str) -> Vec<Vec<char>> {
 #[allow(dead_code)]
 pub fn part1(input: &str) -> u32 {
     let diagram: Grid<char> = Grid::of_vec_of_vecs(parse(input)).unwrap();
-    let rows = diagram.rows();
-    let cols = diagram.cols();
+    let dimensions = diagram.dimensions();
     let mut sum = 0;
-    for row_start in GridPoint::new(0_usize, 0).traverse_by(SOUTH, 0, rows, 0, cols) {
+    for row_start in GridPoint::new(0_usize, 0).traverse_by(SOUTH, dimensions) {
         let mut current_number = 0;
         let mut important_number = false;
-        for char_idx in row_start.traverse_by(EAST, 0, rows, 0, cols) {
+        for char_idx in row_start.traverse_by(EAST, dimensions) {
             let digit = diagram.get(char_idx).unwrap();
             if digit.is_numeric() {
                 current_number = 10 * current_number + digit.to_digit(10).unwrap();
                 for adjacent_offset in ADJACENT {
-                    if let Some(offset_idx) =
-                        char_idx.add_checked(adjacent_offset, &0, &rows, &0, &cols)
-                    {
+                    if let Some(offset_idx) = char_idx.add_checked(adjacent_offset, &dimensions) {
                         let adjacent_digit = diagram.get(offset_idx).unwrap();
                         important_number |= *adjacent_digit != '.' && !adjacent_digit.is_digit(10);
                     }
@@ -55,19 +52,16 @@ pub fn part1(input: &str) -> u32 {
 pub fn part2(input: &str) -> u32 {
     let diagram: Grid<char> = Grid::of_vec_of_vecs(parse(input)).unwrap();
     let mut gears: HashMap<GridPoint<usize>, Vec<u32>> = HashMap::new();
-    let rows = diagram.rows();
-    let cols = diagram.cols();
-    for row_start in GridPoint::new(0_usize, 0).traverse_by(SOUTH, 0, rows, 0, cols) {
+    let dimensions = diagram.dimensions();
+    for row_start in GridPoint::new(0_usize, 0).traverse_by(SOUTH, dimensions) {
         let mut current_number = 0;
         let mut adjacent_gears: HashSet<GridPoint<usize>> = HashSet::new();
-        for char_idx in row_start.traverse_by(EAST, 0, rows, 0, cols) {
+        for char_idx in row_start.traverse_by(EAST, dimensions) {
             let digit = diagram.get(char_idx).unwrap();
             if digit.is_numeric() {
                 current_number = 10 * current_number + digit.to_digit(10).unwrap();
                 for adjacent_offset in ADJACENT {
-                    if let Some(offset_idx) =
-                        char_idx.add_checked(adjacent_offset, &0, &rows, &0, &cols)
-                    {
+                    if let Some(offset_idx) = char_idx.add_checked(adjacent_offset, &dimensions) {
                         if *diagram.get(offset_idx).unwrap() == '*' {
                             adjacent_gears.insert(offset_idx);
                         }
