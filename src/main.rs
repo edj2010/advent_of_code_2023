@@ -15,6 +15,7 @@ mod day_12;
 mod day_13;
 mod day_14;
 mod day_15;
+mod day_16;
 
 #[allow(dead_code)]
 const YEAR: &str = "2023";
